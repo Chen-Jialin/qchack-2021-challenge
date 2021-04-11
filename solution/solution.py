@@ -3,7 +3,6 @@ from typing import List, Tuple
 import numpy as np
 import cirq
 
-
 def matrix_to_sycamore_operations(
     target_qubits: List[cirq.GridQubit], matrix: np.ndarray
 ) -> Tuple[cirq.OP_TREE, List[cirq.GridQubit]]:
@@ -27,4 +26,26 @@ def matrix_to_sycamore_operations(
                 an empty list.
         .
     """
-    return NotImplemented, []
+    num_qubit = len(target_qubits)
+    ops = []
+    if num_qubit == 1:
+        ops = cirq.optimizers.single_qubit_matrix_to_gates(matrix)
+        for i in range(len(ops)):
+            ops[i] = ops[i].on(target_qubits[0])
+    elif num_qubit == 2:
+        if np.all(matrix == cirq.unitary(cirq.google.SYC)):
+            ops = [cirq.google.SYC(target_qubits[0], target_qubits[1])]
+        else:
+            ops = cirq.two_qubit_matrix_to_operations(target_qubits[0], target_qubits[1], matrix, allow_partial_czs=False)
+    elif num_qubit == 3:
+        if (matrix == np.diag([1, 1, 1, 1, 1, 1, 1, 1])).all():
+            ops = []
+        else:
+            ops = cirq.three_qubit_matrix_to_operations(target_qubits[0], target_qubits[1], target_qubits[2], matrix)
+
+    # print('target_qubit:', target_qubits)
+    # print('matrix:', matrix, end='\n\n')
+    # print('ops:')
+    # for i in ops:
+    #     print(i)
+    return ops, []
